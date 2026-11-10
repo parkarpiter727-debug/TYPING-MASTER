@@ -1,0 +1,6 @@
+{
+  "name": "TypeMaster Pro",
+  "description": "Bilingual Typing Master for English and Urdu with real-time WPM, accuracy metrics, 3-tier lessons, and global leaderboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
