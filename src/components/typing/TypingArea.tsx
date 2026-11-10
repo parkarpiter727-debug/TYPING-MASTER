@@ -2,7 +2,10 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useTypingStore } from '../../store/typingStore.ts';
 import { useLanguage } from '../../hooks/useLanguage.ts';
 import { translateKeyToUrdu, isUrduChar } from '../../lib/urduPhonetic.ts';
-import { Keyboard, HelpCircle, Check, Info } from 'lucide-react';
+import { soundService } from '../../lib/soundService.ts';
+import { recordKeyAttempt } from '../../lib/weakKeysService.ts';
+import { SoundControl } from './SoundControl.tsx';
+import { Keyboard, HelpCircle, Info } from 'lucide-react';
 
 interface TypingAreaProps {
   onComplete?: () => void;
@@ -28,7 +31,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
   const handleInput = useTypingStore((s) => s.handleInput);
   const handleBackspace = useTypingStore((s) => s.handleBackspace);
 
-  // Focus input automatically on mount and on container click
+  // Focus input automatically on mount and on text change
   useEffect(() => {
     if (!disabled && inputRef.current) {
       inputRef.current.focus();
@@ -60,6 +63,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
     currentIndex < originalText.length ? originalText[currentIndex] : '';
   const textHasUrdu = isUrdu || isUrduChar(expectedNextChar);
 
+  // Keydown handler for desktop keyboard
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (disabled || isComplete) return;
 
@@ -74,18 +78,55 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       return;
     }
 
-    // Only process printable single character inputs
+    // Process single character key press
     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
 
       let charToInput = e.key;
-      // If typing in Urdu mode or expected character is Urdu, apply phonetic transliteration
       if (textHasUrdu && phoneticEnabled) {
         charToInput = translateKeyToUrdu(e.key, true);
       }
 
+      if (currentIndex < originalText.length) {
+        const expected = originalText[currentIndex];
+        const isCorrect = charToInput === expected;
+        recordKeyAttempt(expected, isCorrect);
+
+        // Play subtle tactile feedback on correct keypress
+        if (isCorrect) {
+          soundService.playCorrectKey(charToInput === ' ');
+        }
+      }
+
       handleInput(charToInput);
     }
+  };
+
+  // Change handler for mobile soft keyboards, IME, and auto-insert
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (disabled || isComplete) return;
+    const val = e.target.value;
+    if (!val) return;
+
+    for (const char of val) {
+      let charToInput = char;
+      if (textHasUrdu && phoneticEnabled) {
+        charToInput = translateKeyToUrdu(char, true);
+      }
+      if (currentIndex < originalText.length) {
+        const expected = originalText[currentIndex];
+        const isCorrect = charToInput === expected;
+        recordKeyAttempt(expected, isCorrect);
+
+        if (isCorrect) {
+          soundService.playCorrectKey(charToInput === ' ');
+        }
+      }
+      handleInput(charToInput);
+    }
+
+    // Reset input value so it's always ready for next keystroke
+    e.target.value = '';
   };
 
   const focusInput = () => {
@@ -104,20 +145,26 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
         disabled ? 'opacity-60 pointer-events-none' : 'hover:border-cyan-500/40'
       }`}
     >
-      {/* Hidden input to catch keyboard events on all devices */}
+      {/* Invisible overlay input: handles taps, clicks, mobile software keyboard, and hardware keyboard */}
       <input
         ref={inputRef}
         type="text"
-        className="absolute opacity-0 pointer-events-none -left-9999px"
+        value=""
+        onChange={handleInputChange}
         onKeyDown={handleKeyDown}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
+        autoCapitalize="none"
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck={false}
+        inputMode="text"
         disabled={disabled || isComplete}
-        autoFocus
         tabIndex={0}
         aria-label="Typing input catcher"
       />
 
-      {/* Top Bar with Live Indicator & Urdu Phonetic Switch */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 text-xs">
+      {/* Top Bar with Live Indicator & Urdu Phonetic Switch (z-20 so it remains clickable) */}
+      <div className="relative z-20 flex flex-wrap items-center justify-between gap-3 mb-4 text-xs">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping inline-block" />
           <span className="font-medium text-[#E8EBF0]">
@@ -137,6 +184,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
                 onClick={(e) => {
                   e.stopPropagation();
                   setPhoneticEnabled(!phoneticEnabled);
+                  focusInput();
                 }}
                 className="flex items-center gap-1.5 font-medium text-cyan-300 hover:text-cyan-200 cursor-pointer"
                 title="Toggle English QWERTY to Urdu Phonetic auto-transliteration"
@@ -155,13 +203,16 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
                   e.stopPropagation();
                   setShowHelperModal(!showHelperModal);
                 }}
-                className="text-[#8892A4] hover:text-[#E8EBF0] p-0.5"
+                className="text-[#8892A4] hover:text-[#E8EBF0] p-0.5 cursor-pointer"
                 title="Urdu typing guide"
               >
                 <HelpCircle className="w-3.5 h-3.5" />
               </button>
             </div>
           )}
+
+          {/* Tactile Audio Feedback Control */}
+          <SoundControl />
 
           <span className="font-mono-code text-cyan-400 font-semibold">
             {currentIndex} / {textLength} ({Math.round(progressPercent)}%)
@@ -173,7 +224,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       {showHelperModal && textHasUrdu && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="mb-4 p-4 rounded-xl bg-[#0D0F14] border border-cyan-500/40 text-xs text-[#E8EBF0] space-y-2 animate-fadeIn"
+          className="relative z-20 mb-4 p-4 rounded-xl bg-[#0D0F14] border border-cyan-500/40 text-xs text-[#E8EBF0] space-y-2 animate-fadeIn"
         >
           <div className="flex items-center justify-between font-bold text-cyan-300">
             <span className="flex items-center gap-1.5">
@@ -182,7 +233,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
             </span>
             <button
               onClick={() => setShowHelperModal(false)}
-              className="text-[#8892A4] hover:text-white"
+              className="text-[#8892A4] hover:text-white cursor-pointer"
             >
               ✕
             </button>
@@ -242,7 +293,7 @@ export const TypingArea: React.FC<TypingAreaProps> = ({
       </div>
 
       {/* Bottom Hint */}
-      <div className="mt-5 pt-3 border-t border-[#2A3447]/60 flex items-center justify-between text-xs text-[#6B7280]">
+      <div className="relative z-20 mt-5 pt-3 border-t border-[#2A3447]/60 flex items-center justify-between text-xs text-[#6B7280]">
         <span>
           {textHasUrdu
             ? 'غلطی کی صورت میں بیک اسپیس (Backspace) دبائیں۔ نیچے ورچوئل کی بورڈ پر کلک بھی کر سکتے ہیں۔'

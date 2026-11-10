@@ -13,6 +13,8 @@ import {
   X,
   User as UserIcon,
   Settings,
+  Gamepad2,
+  Award,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth.ts';
 import { useLanguage } from '../../hooks/useLanguage.ts';
@@ -33,6 +35,8 @@ export const Navbar: React.FC = () => {
   const navLinks = [
     { to: '/lessons', label: isUrdu ? 'اسباق' : 'Lessons', icon: BookOpen },
     { to: '/test', label: isUrdu ? 'ٹائپنگ ٹیسٹ' : 'Typing Test', icon: Zap },
+    { to: '/game', label: isUrdu ? 'آرکیڈ گیم' : 'Game', icon: Gamepad2 },
+    { to: '/urdu-pad', label: isUrdu ? 'اردو پیڈ' : 'Urdu Pad', icon: Keyboard, highlight: true },
     { to: '/custom', label: isUrdu ? 'کسٹم' : 'Custom', icon: Edit3 },
     { to: '/leaderboard', label: isUrdu ? 'لیڈر بورڈ' : 'Leaderboard', icon: Trophy },
     { to: '/dashboard', label: isUrdu ? 'ڈیش بورڈ' : 'Dashboard', icon: LayoutDashboard },
@@ -48,17 +52,26 @@ export const Navbar: React.FC = () => {
         {/* Left: Brand Logo */}
         <Link
           to="/"
-          className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-lg p-1"
+          className="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 rounded-lg p-1"
         >
-          <div className="p-2 rounded-xl bg-gradient-to-br from-cyan-500 to-purple-600 text-black shadow-[0_0_15px_rgba(0,229,255,0.4)] group-hover:scale-105 transition-transform">
-            <Keyboard className="w-5 h-5 text-gray-950 stroke-[2.5]" />
+          <div className="w-10 h-10 rounded-xl bg-white p-1 shadow-[0_0_15px_rgba(0,229,255,0.35)] group-hover:scale-105 transition-transform flex items-center justify-center shrink-0 overflow-hidden border border-cyan-400/30">
+            <img
+              src="/logo.png"
+              alt="Inspire Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-[#00E5FF] via-cyan-200 to-[#A855F7] bg-clip-text text-transparent">
-              TypeMaster<span className="text-[#00E5FF] text-xs uppercase px-1.5 py-0.5 ml-1 rounded bg-cyan-950/80 border border-cyan-800/60 font-mono">PRO</span>
-            </span>
-            <span className="text-[10px] text-[#8892A4] font-medium tracking-wider -mt-1 hidden sm:block">
-              {isUrdu ? 'انگلش اور اردو ٹائپنگ ماسٹر' : 'Bilingual Typing System'}
+            <div className="flex items-center gap-1.5">
+              <span className="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-[#00E5FF] via-cyan-200 to-[#A855F7] bg-clip-text text-transparent">
+                INSPIRE
+              </span>
+              <span className="text-[#00E5FF] text-[10px] uppercase px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/60 font-mono font-bold">
+                PRO
+              </span>
+            </div>
+            <span className="text-[10px] text-[#8892A4] font-medium tracking-wider -mt-0.5 hidden sm:block">
+              {isUrdu ? 'اردو اور انگلش ٹائپنگ پلیٹ فارم' : 'All Solution in One Platform'}
             </span>
           </div>
         </Link>
@@ -75,11 +88,18 @@ export const Navbar: React.FC = () => {
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                   isActive
                     ? 'text-[#00E5FF] bg-cyan-500/10 border border-cyan-500/20 shadow-[0_0_10px_rgba(0,229,255,0.1)]'
+                    : link.highlight
+                    ? 'text-cyan-300 hover:text-white bg-cyan-950/40 border border-cyan-500/30'
                     : 'text-[#8892A4] hover:text-[#E8EBF0] hover:bg-[#161B27]'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-[#00E5FF]' : 'text-[#8892A4]'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-[#00E5FF]' : link.highlight ? 'text-cyan-400' : 'text-[#8892A4]'}`} />
                 <span>{link.label}</span>
+                {link.highlight && (
+                  <span className="text-[10px] bg-cyan-500/20 text-cyan-300 px-1.5 py-0.2 rounded font-mono font-bold">
+                    اردو
+                  </span>
+                )}
               </Link>
             );
           })}

@@ -10,6 +10,9 @@ import { TypingTest } from './pages/TypingTest.tsx';
 import { CustomLesson } from './pages/CustomLesson.tsx';
 import { Leaderboard } from './pages/Leaderboard.tsx';
 import { Profile } from './pages/Profile.tsx';
+import { UrduPad } from './pages/UrduPad.tsx';
+import { Certificate } from './pages/Certificate.tsx';
+import { WordRainGame } from './pages/WordRainGame.tsx';
 import { useAuthStore } from './store/authStore.ts';
 
 export default function App() {
@@ -30,7 +33,10 @@ export default function App() {
             <Route path="/lessons" element={<Lessons />} />
             <Route path="/lessons/:id" element={<LessonDetail />} />
             <Route path="/test" element={<TypingTest />} />
+            <Route path="/game" element={<WordRainGame />} />
+            <Route path="/certificate" element={<Certificate />} />
             <Route path="/custom" element={<CustomLesson />} />
+            <Route path="/urdu-pad" element={<UrduPad />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="*" element={<Navigate to="/" replace />} />

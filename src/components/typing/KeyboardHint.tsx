@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTypingStore } from '../../store/typingStore.ts';
 import { useLanguage } from '../../hooks/useLanguage.ts';
 import { isUrduChar, getEnglishKeyForUrdu, URDU_PHONETIC_MAP } from '../../lib/urduPhonetic.ts';
+import { soundService } from '../../lib/soundService.ts';
 
 export const KeyboardHint: React.FC = () => {
   const { isUrdu } = useLanguage();
@@ -54,6 +55,9 @@ export const KeyboardHint: React.FC = () => {
 
   const handleKeyClick = (key: string) => {
     if (key === 'Space') {
+      if (currentIndex < originalText.length && originalText[currentIndex] === ' ') {
+        soundService.playCorrectKey(true);
+      }
       handleInput(' ');
       return;
     }
@@ -69,12 +73,11 @@ export const KeyboardHint: React.FC = () => {
       return;
     }
 
-    if (textHasUrdu) {
-      const urduChar = URDU_PHONETIC_MAP[key] || key;
-      handleInput(urduChar);
-    } else {
-      handleInput(key);
+    const charToInput = textHasUrdu ? (URDU_PHONETIC_MAP[key] || key) : key;
+    if (currentIndex < originalText.length && originalText[currentIndex] === charToInput) {
+      soundService.playCorrectKey(charToInput === ' ');
     }
+    handleInput(charToInput);
   };
 
   return (

@@ -11,16 +11,12 @@ import {
   Calendar,
   Clock,
   ArrowUpRight,
+  Award,
+  Download,
+  Gamepad2,
+  FileSpreadsheet,
 } from 'lucide-react';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from 'recharts';
+import { WpmProgressChart } from '../components/dashboard/WpmProgressChart.tsx';
 import { useAuth } from '../hooks/useAuth.ts';
 import { useLanguage } from '../hooks/useLanguage.ts';
 import { getUserStats } from '../lib/testResultsService.ts';
@@ -79,22 +75,28 @@ export const Dashboard: React.FC = () => {
 
   const displayName = profile?.display_name || user?.user_metadata?.display_name || 'Typist';
 
-  // Chart data: chronological WPM progression
-  const chartData = stats.history.slice(0, 15).reverse().map((item, idx) => ({
-    name: `#${idx + 1}`,
-    wpm: item.wpm,
-    acc: item.accuracy,
-    date: new Date(item.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' }),
-  }));
-
-  // If no tests taken yet, provide a gentle demo path for the chart
-  const displayChartData =
-    chartData.length > 0
-      ? chartData
-      : [
-          { name: 'Start', wpm: 25, acc: 90, date: 'Day 1' },
-          { name: 'Goal', wpm: 75, acc: 98, date: 'Target' },
-        ];
+  const exportAsCSV = () => {
+    if (stats.history.length === 0) return;
+    const headers = ['ID', 'Date', 'Language', 'DurationSeconds', 'WPM', 'Accuracy', 'Errors', 'CharactersTyped'];
+    const rows = stats.history.map((h) => [
+      h.id,
+      new Date(h.created_at).toISOString(),
+      h.language,
+      h.duration_seconds,
+      h.wpm,
+      h.accuracy,
+      h.errors,
+      h.characters_typed,
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `inspire_pro_typing_history_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading) {
     return (
@@ -113,7 +115,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
-      {/* Top Welcome Header with Streak banner */}
+      {/* Top Welcome Header with Streak & Certificate Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#161B27] via-[#1E2535] to-[#161B27] border border-[#2A3447] shadow-xl">
         <div>
           <div className="flex items-center gap-2">
@@ -131,25 +133,95 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* Daily Streak Highlight */}
-        <div className="flex items-center gap-3.5 px-5 py-3 rounded-2xl bg-[#0D0F14]/90 border border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.15)] shrink-0">
-          <div className="p-2.5 rounded-xl bg-amber-500/15">
-            <Flame className="w-6 h-6 text-amber-400 fill-amber-400 animate-pulse" />
-          </div>
-          <div>
-            <span className="text-[10px] text-[#8892A4] uppercase tracking-wider block font-medium">
-              {isUrdu ? 'مسلسل حاضری' : 'Active Streak'}
-            </span>
-            <div className="flex items-baseline gap-1 font-mono-code">
-              <span className="text-2xl font-extrabold text-white">
-                {streak?.current_streak ?? 1}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Certificate Quick Button */}
+          <Link to={`/certificate?name=${encodeURIComponent(displayName)}&wpm=${stats.bestWpm || 60}&accuracy=${stats.avgAccuracy || 98}`}>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={<Award className="w-4 h-4 text-amber-300 fill-amber-300" />}
+              className="shadow-[0_0_15px_rgba(245,158,11,0.3)] bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-bold"
+            >
+              {isUrdu ? 'سرٹیفکیٹ حاصل کریں' : 'My Certificate'}
+            </Button>
+          </Link>
+
+          {/* Daily Streak Highlight */}
+          <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-[#0D0F14]/90 border border-amber-500/30 text-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.15)] shrink-0">
+            <Flame className="w-5 h-5 text-amber-400 fill-amber-400 animate-pulse" />
+            <div className="text-left font-mono-code">
+              <span className="text-[10px] text-[#8892A4] uppercase block font-medium">
+                {isUrdu ? 'حاضری' : 'Streak'}
               </span>
-              <span className="text-xs text-amber-300">
-                {isUrdu ? 'دن' : 'days'}
+              <span className="text-lg font-extrabold text-white">
+                {streak?.current_streak ?? 1} {isUrdu ? 'دن' : 'days'}
               </span>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Featured Quick Launch Tools Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link
+          to="/game"
+          className="p-4 rounded-2xl bg-gradient-to-br from-cyan-950/40 via-[#161B27] to-[#161B27] border border-cyan-500/30 hover:border-cyan-400 transition-all group flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 group-hover:scale-110 transition-transform">
+              <Gamepad2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white group-hover:text-cyan-300">
+                {isUrdu ? 'الفاظ کی بارش (گیم)' : 'Word Rain Arcade'}
+              </h4>
+              <p className="text-[11px] text-[#8892A4]">
+                {isUrdu ? 'اردو و انگلش الفاظ کی تیز گیم' : 'Play fun typing reflex game'}
+              </p>
+            </div>
+          </div>
+          <ArrowUpRight className="w-4 h-4 text-[#8892A4] group-hover:text-cyan-400 transition-colors" />
+        </Link>
+
+        <Link
+          to="/test"
+          className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/40 via-[#161B27] to-[#161B27] border border-purple-500/30 hover:border-purple-400 transition-all group flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 group-hover:scale-110 transition-transform">
+              <Zap className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white group-hover:text-purple-300">
+                {isUrdu ? 'اسپیڈ ٹیسٹ و گھوسٹ ریسر' : 'Ghost Pacer Test'}
+              </h4>
+              <p className="text-[11px] text-[#8892A4]">
+                {isUrdu ? 'اپنی رفتار کا مقابلہ کریں' : 'Race against target WPM'}
+              </p>
+            </div>
+          </div>
+          <ArrowUpRight className="w-4 h-4 text-[#8892A4] group-hover:text-purple-400 transition-colors" />
+        </Link>
+
+        <Link
+          to="/certificate"
+          className="p-4 rounded-2xl bg-gradient-to-br from-amber-950/40 via-[#161B27] to-[#161B27] border border-amber-500/30 hover:border-amber-400 transition-all group flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 group-hover:scale-110 transition-transform">
+              <Award className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white group-hover:text-amber-300">
+                {isUrdu ? 'سرکاری سرٹیفکیٹ' : 'Verified Certificate'}
+              </h4>
+              <p className="text-[11px] text-[#8892A4]">
+                {isUrdu ? 'پرنٹ و ڈاؤن لوڈ کریں' : 'Official typing proficiency seal'}
+              </p>
+            </div>
+          </div>
+          <ArrowUpRight className="w-4 h-4 text-[#8892A4] group-hover:text-amber-400 transition-colors" />
+        </Link>
       </div>
 
       {/* Stats Cards Row */}
@@ -189,58 +261,10 @@ export const Dashboard: React.FC = () => {
 
       {/* Middle Section: Progress Chart & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Progress Chart (2 Cols) */}
-        <Card className="lg:col-span-2 p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between pb-4 border-b border-[#2A3447]">
-            <div>
-              <h3 className="text-lg font-bold text-[#E8EBF0]">
-                {isUrdu ? 'رفتار کی پیش رفت (WPM Progression)' : 'Speed Progression (WPM)'}
-              </h3>
-              <p className="text-xs text-[#8892A4] mt-0.5">
-                {chartData.length > 0
-                  ? isUrdu
-                    ? 'آپ کے حالیہ ٹائپنگ ٹیسٹس کا گراف'
-                    : 'Your chronological test speed over time'
-                  : isUrdu
-                  ? 'پہلا ٹیسٹ مکمل کریں تاکہ آپ کا گراف نظر آئے'
-                  : 'Take your first test to track live progression'}
-              </p>
-            </div>
-            <div className="flex items-center gap-3 text-xs font-mono">
-              <span className="flex items-center gap-1.5 text-cyan-400">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
-                WPM
-              </span>
-            </div>
-          </div>
-
-          <div className="h-64 w-full mt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={displayChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A3447" opacity={0.5} />
-                <XAxis dataKey="date" stroke="#64748B" fontSize={11} tickLine={false} />
-                <YAxis stroke="#64748B" fontSize={11} tickLine={false} domain={['dataMin - 5', 'dataMax + 10']} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#161B27',
-                    borderColor: '#2A3447',
-                    borderRadius: '0.75rem',
-                    color: '#E8EBF0',
-                    fontSize: '12px',
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="wpm"
-                  stroke="#00E5FF"
-                  strokeWidth={3}
-                  dot={{ fill: '#00E5FF', r: 4 }}
-                  activeDot={{ r: 6, fill: '#A855F7' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
+        {/* WPM Progress Line Chart (Last 10 Tests) */}
+        <div className="lg:col-span-2">
+          <WpmProgressChart history={stats.history} isUrdu={isUrdu} />
+        </div>
 
         {/* Quick Actions Panel */}
         <Card className="p-6 flex flex-col justify-between">
@@ -323,13 +347,26 @@ export const Dashboard: React.FC = () => {
 
       {/* Recent Activity Table */}
       <Card className="p-6">
-        <div className="flex items-center justify-between pb-4 border-b border-[#2A3447]">
-          <h3 className="text-lg font-bold text-[#E8EBF0]">
-            {isUrdu ? 'حالیہ ٹیسٹس کی تفصیل' : 'Recent Test Activity'}
-          </h3>
-          <span className="text-xs text-[#8892A4]">
-            {stats.history.length} {isUrdu ? 'ریکارڈ شدہ ٹیسٹس' : 'total recorded tests'}
-          </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#2A3447]">
+          <div>
+            <h3 className="text-lg font-bold text-[#E8EBF0]">
+              {isUrdu ? 'حالیہ ٹیسٹس کی تفصیل' : 'Recent Test Activity'}
+            </h3>
+            <span className="text-xs text-[#8892A4]">
+              {stats.history.length} {isUrdu ? 'ریکارڈ شدہ ٹیسٹس' : 'total recorded tests'}
+            </span>
+          </div>
+
+          {stats.history.length > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={exportAsCSV}
+              icon={<Download className="w-3.5 h-3.5" />}
+            >
+              {isUrdu ? 'ایکسپورٹ (CSV)' : 'Export CSV'}
+            </Button>
+          )}
         </div>
 
         {stats.history.length === 0 ? (

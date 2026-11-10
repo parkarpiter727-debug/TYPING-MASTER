@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
-import { RotateCcw, Trophy, LayoutDashboard, ArrowRight, Star, TrendingUp } from 'lucide-react';
+import { RotateCcw, Trophy, LayoutDashboard, ArrowRight, Star, TrendingUp, Award, Share2, Check, Target } from 'lucide-react';
 import { TypingStats } from '../../types/index.ts';
 import { formatTime, getStarRating } from '../../lib/typingUtils.ts';
 import { Button } from '../ui/Button.tsx';
@@ -11,6 +12,7 @@ interface ResultCardProps {
   onNext?: () => void;
   onLeaderboard?: () => void;
   onDashboard?: () => void;
+  onWeakKeysDrill?: () => void;
   stars?: number;
   improvement?: number;
   isLesson?: boolean;
@@ -22,10 +24,13 @@ export const ResultCard: React.FC<ResultCardProps> = ({
   onNext,
   onLeaderboard,
   onDashboard,
+  onWeakKeysDrill,
   stars,
   improvement = 0,
   isLesson = false,
 }) => {
+  const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
   const calculatedStars = stars ?? getStarRating(stats.wpm, stats.accuracy);
 
   useEffect(() => {
@@ -121,15 +126,47 @@ export const ResultCard: React.FC<ResultCardProps> = ({
 
       {/* Action Buttons */}
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3 relative z-10">
+        <Button
+          variant="primary"
+          onClick={() => navigate(`/certificate?wpm=${stats.wpm}&accuracy=${stats.accuracy}`)}
+          icon={<Award className="w-4 h-4 text-amber-300 fill-amber-300" />}
+          className="shadow-[0_0_20px_rgba(245,158,11,0.3)] bg-gradient-to-r from-amber-500 to-yellow-400 text-black font-bold"
+        >
+          Official Certificate
+        </Button>
+
         <Button variant="secondary" onClick={onRetry} icon={<RotateCcw className="w-4 h-4" />}>
           Try Again
         </Button>
+
+        {onWeakKeysDrill && stats.errors > 0 && (
+          <Button
+            variant="secondary"
+            onClick={onWeakKeysDrill}
+            icon={<Target className="w-4 h-4 text-rose-400" />}
+          >
+            Fix Weak Keys
+          </Button>
+        )}
 
         {onNext && (
           <Button variant="primary" onClick={onNext} icon={<ArrowRight className="w-4 h-4" />}>
             Next Lesson
           </Button>
         )}
+
+        <Button
+          variant="secondary"
+          onClick={() => {
+            const summary = `🚀 INSPIRE PRO Typing Performance:\n⚡ Speed: ${stats.wpm} WPM\n🎯 Accuracy: ${stats.accuracy}%\n❌ Errors: ${stats.errors}\n⏱ Time: ${formatTime(stats.elapsedSeconds)}\nTry it now at INSPIRE PRO!`;
+            navigator.clipboard.writeText(summary);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          icon={copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+        >
+          {copied ? 'Copied Score!' : 'Share Score'}
+        </Button>
 
         {onLeaderboard && (
           <Button variant="secondary" onClick={onLeaderboard} icon={<Trophy className="w-4 h-4" />}>

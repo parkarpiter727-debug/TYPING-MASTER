@@ -61,9 +61,9 @@ export const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           {/* Top Pill Announcement */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#161B27] border border-cyan-500/30 text-xs text-cyan-300 mb-8 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <img src="/logo.png" alt="Inspire" className="w-4 h-4 object-contain rounded bg-white p-0.5" />
             <span className="font-medium">
-              {isUrdu ? 'اردو اور انگلش کا پہلا مکمل ٹائپنگ پلیٹ فارم' : 'Bilingual Typing Master — English & Urdu'}
+              {isUrdu ? 'انسپائر — اردو اور انگلش کا مکمل ٹائپنگ پلیٹ فارم' : 'INSPIRE — Bilingual Typing Master (English & Urdu)'}
             </span>
           </div>
 
@@ -99,11 +99,22 @@ export const Home: React.FC = () => {
             <Button
               size="lg"
               variant="primary"
-              onClick={() => navigate(isLoggedIn ? '/test' : '/test')}
+              onClick={() => navigate('/test')}
               icon={<Play className="w-5 h-5 fill-current" />}
             >
               {isUrdu ? 'مفت ٹائپنگ ٹیسٹ شروع کریں' : 'Start Typing Free'}
             </Button>
+
+            <Link to="/urdu-pad">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="border-cyan-500/40 text-cyan-300 hover:border-cyan-400 hover:text-white shadow-[0_0_15px_rgba(0,229,255,0.15)]"
+                icon={<Keyboard className="w-5 h-5 text-cyan-400" />}
+              >
+                {isUrdu ? 'اردو ٹائپنگ پیڈ (Urdu Pad)' : 'Urdu Typing Pad (اردو)'}
+              </Button>
+            </Link>
 
             <Link to="/leaderboard">
               <Button size="lg" variant="secondary" icon={<Trophy className="w-5 h-5 text-amber-400" />}>

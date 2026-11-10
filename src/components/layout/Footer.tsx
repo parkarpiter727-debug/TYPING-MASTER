@@ -12,11 +12,14 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Col 1: Brand */}
           <div className="space-y-3 md:col-span-1">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 text-black">
-                <Keyboard className="w-4 h-4 text-gray-950" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-white p-0.5 shadow-sm overflow-hidden flex items-center justify-center shrink-0 border border-cyan-400/30">
+                <img src="/logo.png" alt="Inspire Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="font-bold text-base text-[#E8EBF0]">TypeMaster Pro</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-base text-[#E8EBF0] leading-none">INSPIRE</span>
+                <span className="text-[10px] text-[#8892A4]">All Solution in One Platform</span>
+              </div>
             </div>
             <p className="text-xs leading-relaxed text-[#8892A4]">
               {isUrdu

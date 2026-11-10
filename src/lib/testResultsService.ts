@@ -58,7 +58,10 @@ export async function getUserTestHistory(userId: string, limit = 20): Promise<Te
   }
 
   const all = getLocalResults();
-  return all.filter((r) => r.user_id === userId).slice(0, limit);
+  return all
+    .filter((r) => r.user_id === userId)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, limit);
 }
 
 export async function getUserStats(userId: string): Promise<{
